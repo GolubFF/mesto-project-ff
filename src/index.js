@@ -1,11 +1,18 @@
 import './pages/index.css'
-import avatar from './images/avatar.jpg'
-import {openModal, closeModal, overlayCloseModal} from "./scripts/components/modal";
-import initialCards from "./scripts/utils/constants";
-import * as card from "./scripts/components/card"
 
-const urlAvatar = `url('${avatar}')`
+import {openModal, closeModal, overlayCloseModal} from "./scripts/components/modal";
+import * as card from "./scripts/components/card"
+import {getUser, getCardArr, patchUserApi, addCardApi, changeAvatarApi} from "./scripts/components/api";
+
+
+
 const avatarBlock = document.querySelector('.profile__image')
+const editAvatarPopUp = document.querySelector('.popup_change-avatar')
+const formAvatarEdit = editAvatarPopUp.querySelector('.popup__form')
+const formAvatarEditField = formAvatarEdit.elements
+const formEditAvatar = editAvatarPopUp.querySelector('.popup__form')
+const btnAvatarPopUpClose = editAvatarPopUp.querySelector('.popup__close')
+const btnSaveAvatarPopUp = editAvatarPopUp.querySelector('.popup__button')
 
 const cardList = document.querySelector('.places__list');
 const autor = document.querySelector('.profile__title')
@@ -17,10 +24,12 @@ const editProfilePopUp = document.querySelector('.popup_type_edit')
 const formEditProfile = editProfilePopUp.querySelector('.popup__form')
 const formEditProfileFields = formEditProfile.elements
 const btnCloseEditProfilePopUp = editProfilePopUp.querySelector('.popup__close')
+const btnSendProfileData = editProfilePopUp.querySelector('.popup__button')
 
 const popUpAddCard = document.querySelector('.popup_type_new-card')
 const formAddCard = popUpAddCard.querySelector('.popup__form')
 const btnCloseAddNewCardPopUP = popUpAddCard.querySelector('.popup__close')
+const btnSendNewCard = popUpAddCard.querySelector('.popup__button')
 
 const popupTypeImage = document.querySelector('.popup_type_image')
 const btnClosePopUpTypeImage = popupTypeImage.querySelector('.popup__close')
@@ -28,56 +37,114 @@ const popUpImage = popupTypeImage.querySelector('.popup__image')
 const popUpImageTitle = popupTypeImage.querySelector('.popup__caption')
 
 
+
 initial();
+
 function initial() {
-  avatarImagePlace();
-  createCardList(initialCards)
 
-  const popUpArr = document.querySelectorAll('.popup')
-  popUpArr.forEach(el => el.classList.add('popup_is-animated'))
+  Promise.all([getUser(), getCardArr()])
+    .then(([user, initialCardList]) => {
+      const userId = user._id
 
-  profileEditButton.addEventListener('click', clickProfileEditBtn);
-  formEditProfile.addEventListener('submit', handleProfileFormSubmit)
-  btnCloseEditProfilePopUp.addEventListener('click', () => closeModal(editProfilePopUp))
-  editProfilePopUp.addEventListener('click', overlayCloseModal)
+      initialUser(user)
+      createCardList(initialCardList, userId)
 
-  addNewCardButton.addEventListener('click', () => openModal(popUpAddCard))
-  formAddCard.addEventListener('submit', handleAddNewCard)
-  btnCloseAddNewCardPopUP.addEventListener('click', () => closeModal(popUpAddCard))
-  popUpAddCard.addEventListener('click', overlayCloseModal)
+      const popUpArr = document.querySelectorAll('.popup')
+      popUpArr.forEach(el => el.classList.add('popup_is-animated'))
 
-  btnClosePopUpTypeImage.addEventListener('click', () => closeModal(popupTypeImage))
-  popupTypeImage.addEventListener('click', overlayCloseModal)
+      avatarBlock.addEventListener('click', clickEditAvatar)
+      btnAvatarPopUpClose.addEventListener('click', () => closeModal(editAvatarPopUp))
+      formEditAvatar.addEventListener('submit', handleEditAvatarFormSubmit)
+      editAvatarPopUp.addEventListener('click', overlayCloseModal)
+
+      profileEditButton.addEventListener('click', clickProfileEditBtn);
+      formEditProfile.addEventListener('submit', handleProfileFormSubmit)
+      btnCloseEditProfilePopUp.addEventListener('click', () => closeModal(editProfilePopUp))
+      editProfilePopUp.addEventListener('click', overlayCloseModal)
+
+
+      addNewCardButton.addEventListener('click', () => openModal(popUpAddCard))
+      formAddCard.addEventListener('submit', (evt) => handleAddNewCard(evt, userId))
+      btnCloseAddNewCardPopUP.addEventListener('click', () => closeModal(popUpAddCard))
+      popUpAddCard.addEventListener('click', overlayCloseModal)
+
+      btnClosePopUpTypeImage.addEventListener('click', () => closeModal(popupTypeImage))
+      popupTypeImage.addEventListener('click', overlayCloseModal)
+
+  })
+
+
+
+
+
 }
-function createCardList(dataArr) {
+function createCardList(dataArr, userId) {
   dataArr.forEach(item => {
-    const listElement = card.createCard(item, card.deleteCard, card.likeCard, openModalImage)
+    const listElement = card.createCard(item, card.deleteCard, card.likeCard, openModalImage, userId)
     cardList.append(listElement)
   })
+}
+
+function clickEditAvatar() {
+  openModal(editAvatarPopUp)
 }
 function clickProfileEditBtn() {
   formEditProfileFields.name.value = autor.textContent
   formEditProfileFields.description.value = profile_description.textContent
   openModal(editProfilePopUp);
 }
+
+function handleEditAvatarFormSubmit(evt) {
+  evt.preventDefault();
+  btnSaveAvatarPopUp.textContent = 'Сохранение...'
+  avatarImagePlace(formAvatarEditField.url.value)
+  changeAvatarApi(formAvatarEditField.url.value)
+    .then(response => {
+      if(response) {
+        btnSaveAvatarPopUp.textContent = 'Сохранить'
+        closeModal(editAvatarPopUp)
+        formAvatarEditField.url.value = ''
+      }
+    })
+
+}
 function handleProfileFormSubmit(evt) {
   evt.preventDefault();
-  autor.textContent = formEditProfileFields.name.value
-  profile_description.textContent = formEditProfileFields.description.value
-  closeModal(editProfilePopUp)
+  btnSendProfileData.textContent = 'Сохранение...'
+  patchUserApi(formEditProfileFields.name.value, formEditProfileFields.description.value)
+    .then(response => {
+      if(response.flag) {
+        console.log(response.user)
+        autor.textContent = response.user.name
+        profile_description.textContent = response.user.about
+        closeModal(editProfilePopUp)
+        btnSendProfileData.textContent = 'Сохранить'
+      }
+    })
+
 }
-function handleAddNewCard(evt) {
+function handleAddNewCard(evt, userId) {
+  console.log(userId)
   evt.preventDefault()
   const placeNameFields = formAddCard.elements
   const newCardData = {
     name: placeNameFields['place-name'].value,
     link: placeNameFields['link'].value
   }
-  const newCard = card.createCard(newCardData, card.deleteCard, card.likeCard, openModalImage)
-  cardList.prepend(newCard)
-  placeNameFields['place-name'].value = '';
-  placeNameFields['link'].value = '';
-  closeModal(popUpAddCard)
+  btnSendNewCard.textContent = 'Сохранение...'
+  addCardApi(newCardData)
+    .then(response => {
+        if(response.flag) {
+          btnSendNewCard.textContent = 'Сохранить'
+          const newCard = card.createCard(response.card, card.deleteCard, card.likeCard, openModalImage, userId)
+          cardList.prepend(newCard)
+          placeNameFields['place-name'].value = '';
+          placeNameFields['link'].value = '';
+          closeModal(popUpAddCard)
+        }
+      })
+
+
 }
 function openModalImage(data) {
   popUpImage.src = data.link
@@ -85,6 +152,16 @@ function openModalImage(data) {
   popUpImageTitle.textContent = data.name
   openModal(popupTypeImage)
 }
-function avatarImagePlace() {
-  avatarBlock.style.backgroundImage = urlAvatar;
+function avatarImagePlace(url) {
+  avatarBlock.style.backgroundImage = `url('${url}')`;
 }
+
+function initialUser(user) {
+  avatarImagePlace(user.avatar)
+  autor.textContent = user.name
+  profile_description.textContent = user.about
+}
+
+
+
+

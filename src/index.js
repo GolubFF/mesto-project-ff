@@ -3,7 +3,7 @@ import './pages/index.css'
 import {openModal, closeModal, overlayCloseModal} from "./scripts/components/modal";
 import * as card from "./scripts/components/card"
 import {getUser, getCardArr, patchUserApi, addCardApi, changeAvatarApi} from "./scripts/components/api";
-
+import {setEventListeners, clearValidation, toggleButtonState} from "./scripts/components/validation";
 
 
 const avatarBlock = document.querySelector('.profile__image')
@@ -13,6 +13,7 @@ const formAvatarEditField = formAvatarEdit.elements
 const formEditAvatar = editAvatarPopUp.querySelector('.popup__form')
 const btnAvatarPopUpClose = editAvatarPopUp.querySelector('.popup__close')
 const btnSaveAvatarPopUp = editAvatarPopUp.querySelector('.popup__button')
+
 
 const cardList = document.querySelector('.places__list');
 const autor = document.querySelector('.profile__title')
@@ -35,6 +36,15 @@ const popupTypeImage = document.querySelector('.popup_type_image')
 const btnClosePopUpTypeImage = popupTypeImage.querySelector('.popup__close')
 const popUpImage = popupTypeImage.querySelector('.popup__image')
 const popUpImageTitle = popupTypeImage.querySelector('.popup__caption')
+
+const dataValidation = {
+  formSelector: '.popup__form',
+  inputSelector: '.popup__input',
+  submitButtonSelector: '.popup__button',
+  inactiveButtonClass: 'popup__input_type_error',
+  errorClass: 'popup__error_visible',
+  spanErrorClass: 'form__input-error_active'
+}
 
 
 
@@ -63,7 +73,7 @@ function initial() {
       editProfilePopUp.addEventListener('click', overlayCloseModal)
 
 
-      addNewCardButton.addEventListener('click', () => openModal(popUpAddCard))
+      addNewCardButton.addEventListener('click', clickAddNewCard)
       formAddCard.addEventListener('submit', (evt) => handleAddNewCard(evt, userId))
       btnCloseAddNewCardPopUP.addEventListener('click', () => closeModal(popUpAddCard))
       popUpAddCard.addEventListener('click', overlayCloseModal)
@@ -71,10 +81,9 @@ function initial() {
       btnClosePopUpTypeImage.addEventListener('click', () => closeModal(popupTypeImage))
       popupTypeImage.addEventListener('click', overlayCloseModal)
 
+      enableValidation()
+
   })
-
-
-
 
 
 }
@@ -86,12 +95,22 @@ function createCardList(dataArr, userId) {
 }
 
 function clickEditAvatar() {
+  clearValidation(editAvatarPopUp, dataValidation)
+  toggleButtonState(editAvatarPopUp, dataValidation)
   openModal(editAvatarPopUp)
 }
 function clickProfileEditBtn() {
+  clearValidation(editProfilePopUp, dataValidation)
   formEditProfileFields.name.value = autor.textContent
   formEditProfileFields.description.value = profile_description.textContent
+  toggleButtonState(editProfilePopUp, dataValidation)
   openModal(editProfilePopUp);
+}
+
+function clickAddNewCard() {
+  clearValidation(popUpAddCard, dataValidation)
+  toggleButtonState(popUpAddCard, dataValidation)
+  openModal(popUpAddCard)
 }
 
 function handleEditAvatarFormSubmit(evt) {
@@ -160,6 +179,12 @@ function initialUser(user) {
   avatarImagePlace(user.avatar)
   autor.textContent = user.name
   profile_description.textContent = user.about
+}
+
+
+function enableValidation() {
+  const formList = Array.from(document.querySelectorAll(dataValidation.formSelector))
+  formList.forEach(form => setEventListeners(form, dataValidation))
 }
 
 

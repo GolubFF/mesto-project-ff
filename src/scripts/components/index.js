@@ -1,16 +1,16 @@
-import './pages/index.css'
+import '../../pages/index.css'
 
-import {openModal, closeModal, overlayCloseModal} from "./scripts/components/modal";
-import * as card from "./scripts/components/card"
-import {getUser, getCardArr, patchUserApi, addCardApi, changeAvatarApi} from "./scripts/components/api";
-import {setEventListeners, clearValidation, toggleButtonState} from "./scripts/components/validation";
+import {openModal, closeModal, overlayCloseModal} from "./modal";
+import * as card from "./card"
+import {getUser, getCardArr, patchUserApi, addCardApi, changeAvatarApi} from "./api";
+import {enableValidation, clearValidation, toggleButtonState} from "./validation";
 
 
 const avatarBlock = document.querySelector('.profile__image')
 const editAvatarPopUp = document.querySelector('.popup_change-avatar')
 const formAvatarEdit = editAvatarPopUp.querySelector('.popup__form')
 const formAvatarEditField = formAvatarEdit.elements
-const formEditAvatar = editAvatarPopUp.querySelector('.popup__form')
+
 const btnAvatarPopUpClose = editAvatarPopUp.querySelector('.popup__close')
 const btnSaveAvatarPopUp = editAvatarPopUp.querySelector('.popup__button')
 
@@ -64,7 +64,7 @@ function initial() {
 
       avatarBlock.addEventListener('click', clickEditAvatar)
       btnAvatarPopUpClose.addEventListener('click', () => closeModal(editAvatarPopUp))
-      formEditAvatar.addEventListener('submit', handleEditAvatarFormSubmit)
+      formAvatarEdit.addEventListener('submit', handleEditAvatarFormSubmit)
       editAvatarPopUp.addEventListener('click', overlayCloseModal)
 
       profileEditButton.addEventListener('click', clickProfileEditBtn);
@@ -81,11 +81,9 @@ function initial() {
       btnClosePopUpTypeImage.addEventListener('click', () => closeModal(popupTypeImage))
       popupTypeImage.addEventListener('click', overlayCloseModal)
 
-      enableValidation()
-
+      enableValidation(dataValidation)
   })
-
-
+    .catch((err) => console.log(err))
 }
 function createCardList(dataArr, userId) {
   dataArr.forEach(item => {
@@ -96,7 +94,6 @@ function createCardList(dataArr, userId) {
 
 function clickEditAvatar() {
   clearValidation(editAvatarPopUp, dataValidation)
-  toggleButtonState(editAvatarPopUp, dataValidation)
   openModal(editAvatarPopUp)
 }
 function clickProfileEditBtn() {
@@ -116,15 +113,17 @@ function clickAddNewCard() {
 function handleEditAvatarFormSubmit(evt) {
   evt.preventDefault();
   btnSaveAvatarPopUp.textContent = 'Сохранение...'
-  avatarImagePlace(formAvatarEditField.url.value)
   changeAvatarApi(formAvatarEditField.url.value)
     .then(response => {
-      if(response) {
-        btnSaveAvatarPopUp.textContent = 'Сохранить'
+      if(response.flag) {
+        const url = response.user.avatar
+        avatarImagePlace(url)
         closeModal(editAvatarPopUp)
         formAvatarEditField.url.value = ''
       }
     })
+    .catch(err => console.log(err))
+    .finally(() => {btnSaveAvatarPopUp.textContent = 'Сохранить'})
 
 }
 function handleProfileFormSubmit(evt) {
@@ -133,17 +132,16 @@ function handleProfileFormSubmit(evt) {
   patchUserApi(formEditProfileFields.name.value, formEditProfileFields.description.value)
     .then(response => {
       if(response.flag) {
-        console.log(response.user)
         autor.textContent = response.user.name
         profile_description.textContent = response.user.about
         closeModal(editProfilePopUp)
-        btnSendProfileData.textContent = 'Сохранить'
       }
     })
+    .catch(err => console.log(err))
+    .finally(() => {btnSendProfileData.textContent = 'Сохранить'})
 
 }
 function handleAddNewCard(evt, userId) {
-  console.log(userId)
   evt.preventDefault()
   const placeNameFields = formAddCard.elements
   const newCardData = {
@@ -154,14 +152,16 @@ function handleAddNewCard(evt, userId) {
   addCardApi(newCardData)
     .then(response => {
         if(response.flag) {
-          btnSendNewCard.textContent = 'Сохранить'
           const newCard = card.createCard(response.card, card.deleteCard, card.likeCard, openModalImage, userId)
           cardList.prepend(newCard)
-          placeNameFields['place-name'].value = '';
-          placeNameFields['link'].value = '';
           closeModal(popUpAddCard)
+          formAddCard.reset()
         }
       })
+    .catch(err => console.log(err))
+    .finally(() => {
+      btnSendNewCard.textContent = 'Сохранить'
+    })
 
 
 }
@@ -174,18 +174,12 @@ function openModalImage(data) {
 function avatarImagePlace(url) {
   avatarBlock.style.backgroundImage = `url('${url}')`;
 }
-
 function initialUser(user) {
   avatarImagePlace(user.avatar)
   autor.textContent = user.name
   profile_description.textContent = user.about
 }
 
-
-function enableValidation() {
-  const formList = Array.from(document.querySelectorAll(dataValidation.formSelector))
-  formList.forEach(form => setEventListeners(form, dataValidation))
-}
 
 
 

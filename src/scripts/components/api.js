@@ -4,33 +4,23 @@ const config = {
     authorization: '2f58622b-d0b5-4307-a605-706103b16a1d'
   }
 }
-
 export const getUser = () => {
   return fetch(`${config.baseUrl}/users/me`, {
     headers: {
       authorization: `${config.headers.authorization}`
     }
   })
-    .then(res => {
-      if(res.ok) {
-        return res.json()
-      }
-      return Promise.reject(`Error: ${res.status}`)
-    })
-    .then((result) => {
-      return {
+    .then(res => getResponseData(res))
+    .then(result => Promise.resolve(
+      {
         _id: result._id,
         name: result.name,
         about: result.about,
         avatar: result.avatar,
         cohort: result.cohort
-      }
-    })
-    .catch((err) => {
-      console.log(err)
-    })
+        }
+    ))
 }
-
 export const patchUserApi = (name, about) => {
   return fetch(`${config.baseUrl}/users/me`, {
     method: 'PATCH',
@@ -43,41 +33,18 @@ export const patchUserApi = (name, about) => {
       about
     })
   })
-    .then(res => {
-      if(res.ok) {
-        return res.json()
-      }
-      return Promise.reject(`Error: ${res.status}`)
-    })
-    .then(response => {
-      return {
-        user: response,
-        flag: true
-      }
-    })
-    .catch((err) => {
-      console.log(err)
-    })
+    .then(res => getResponseData(res))
+    .then(user => Promise.resolve({user, flag: true}))
 }
-
 export const getCardArr = () => {
   return fetch(`${config.baseUrl}/cards`, {
     headers: {
       authorization: `${config.headers.authorization}`
     }
   })
-    .then(res => {
-      if(res.ok) {
-        return res.json()
-      }
-      return Promise.reject(`Error: ${res.status}`)
-    })
-    .then(result => result)
-    .catch((err) => {
-      console.log(err)
-    })
+    .then(res => getResponseData(res))
+    .then(result => Promise.resolve(result))
 }
-
 export const addCardApi = (card) => {
   return fetch(`${config.baseUrl}/cards`, {
     method: 'POST',
@@ -90,25 +57,9 @@ export const addCardApi = (card) => {
       link: card.link
     })
   })
-    .then(res => {
-      if(res.ok) {
-        return res.json()
-      }
-      return Promise.reject(`Error: ${res.status}`)
-    })
-    .then(result => {
-      const response = {
-        card: result,
-        flag: true
-      }
-      console.log(result)
-      return response
-    })
-    .catch((err) => {
-      console.log(err)
-    })
+    .then(res => getResponseData(res))
+    .then(card => Promise.resolve({card, flag: true}))
 }
-
 export const likeCardAPI = (id, method) => {
   return fetch(`${config.baseUrl}/cards/likes/${id}`, {
     method,
@@ -116,38 +67,19 @@ export const likeCardAPI = (id, method) => {
       authorization: `${config.headers.authorization}`
     }
   })
-    .then(res => {
-      if(res.ok) {
-        return res.json()
-      }
-      return Promise.reject(`Error: ${res.status}`)
-    })
-    .then(result => result)
-    .catch((err) => {
-      console.log(err)
-    })
+    .then(res => getResponseData(res))
+    .then(result => Promise.resolve(result))
 }
-
 export const deleteCardAPI = (id) => {
-  fetch(`${config.baseUrl}/cards/${id}`, {
+  return fetch(`${config.baseUrl}/cards/${id}`, {
     method: 'DELETE',
     headers: {
       authorization: `${config.headers.authorization}`
     }
   })
-    .then(res => {
-      if(res.ok) {
-        console.log('DELETE')
-        return res.json()
-      }
-      return Promise.reject(`Error: ${res.status}`)
-    })
-    .then(result => console.log(result))
-    .catch((err) => {
-      console.log(err)
-    })
+    .then(res => getResponseData(res))
+    .then(result => Promise.resolve({result, flag: true}))
 }
-
 export const changeAvatarApi = (url) => {
   return fetch(`${config.baseUrl}/users/me/avatar`, {
     method: 'PATCH',
@@ -159,20 +91,13 @@ export const changeAvatarApi = (url) => {
       avatar: url
     })
   })
-    .then(res => {
-      if(res.ok) {
-        return res.json()
-      }
-      return Promise.reject(`Error: ${res.status}`)
-    })
-    .then(user => {
-      console.log(user)
-      return true
-    })
-    .catch((err) => {
-      console.log(err)
-    })
-
+    .then(res => getResponseData(res))
+    .then(user => Promise.resolve({user, flag: true}))
 }
-
+function getResponseData(res) {
+  if(!res.ok) {
+    return Promise.reject(`Error: ${res.status}`)
+  }
+  return res.json()
+}
 

@@ -1,5 +1,10 @@
 
-export const setEventListeners = (form, dataValidation) => {
+
+export const enableValidation = (dataValidation) => {
+  const formList = Array.from(document.querySelectorAll(dataValidation.formSelector))
+  formList.forEach(form => setEventListeners(form, dataValidation))
+}
+const setEventListeners = (form, dataValidation) => {
 
   const inputList = Array.from(form.querySelectorAll(dataValidation.inputSelector))
   inputList.forEach(input => {
@@ -11,7 +16,7 @@ export const setEventListeners = (form, dataValidation) => {
 }
 const showInputError = (element, errorMessage, dataValidation) => {
 
-  const form = element.closest('.popup__form')
+  const form = element.closest(dataValidation.formSelector)
   const spanError = form.querySelector(`.${element.id}-error`)
   element.classList.add(dataValidation.errorClass)
   spanError.textContent = errorMessage
@@ -19,8 +24,7 @@ const showInputError = (element, errorMessage, dataValidation) => {
 }
 
 const hideInputError = (element, dataValidation) => {
-
-  const form = element.closest('.popup__form')
+  const form = element.closest(dataValidation.formSelector)
   const spanError = form.querySelector(`.${element.id}-error`)
   element.classList.remove(dataValidation.errorClass);
   spanError.classList.remove(dataValidation.spanErrorClass)
@@ -59,8 +63,9 @@ export const toggleButtonState = (form, dataValidation) => {
 
 export const clearValidation = (form, dataValidation) => {
   const inputList = Array.from(form.querySelectorAll(dataValidation.inputSelector))
+  form.querySelector(dataValidation.formSelector).reset()
   inputList.forEach((input) => {
-    input.value = ''
     hideInputError(input, dataValidation)
   })
+  toggleButtonState(form, dataValidation)
 }

@@ -12,18 +12,13 @@ function createCard(item, deleteCard, likeCard, openPopUp, userID) {
   const cardId = item._id
   const likesArr = item.likes
 
-
-
   card.querySelector('.card__title').textContent = item.name
   card.querySelector('.card__image').src = item.link
   card.querySelector('.card__image').alt = item.name
 
-
-
   if(checkLikeById(userID, likesArr)) {
     likeButton.classList.add('card__like-button_is-active')
   }
-
 
   if(item.owner._id !== userID) {
     buttonDelete.classList.add('hidden_button')
@@ -39,30 +34,40 @@ function createCard(item, deleteCard, likeCard, openPopUp, userID) {
 }
 function deleteCard(deleteItem, cardId) {
   deleteCardAPI(cardId)
-  deleteItem.remove()
+    .then(response => {
+      if(response.flag){
+        deleteItem.remove()
+      }
+    })
+    .catch((err) => {
+      console.log(err)
+    })
+
 }
 function likeCard(likedItem, cardId) {
-  const likeButton = likedItem.parentElement
+  const likeButton = likedItem.closest('.card__like-block')
   const countLike = likeButton.querySelector('.card__count-like')
   if(likedItem.classList.contains('card__like-button_is-active')){
-
     likeCardAPI(cardId, "DELETE")
       .then(res => {
         const likes = res.likes
         countLike.textContent = likes.length
+        likedItem.classList.toggle('card__like-button_is-active')
       })
-
+      .catch((err) => {
+        console.log(err)
+      })
   } else {
-
     likeCardAPI(cardId, "PUT")
       .then(res => {
         const likes = res.likes
         countLike.textContent = likes.length
+        likedItem.classList.toggle('card__like-button_is-active')
       })
-
+      .catch((err) => {
+        console.log(err)
+      })
   }
-  likedItem.classList.toggle('card__like-button_is-active')
-
 }
 
 function checkLikeById(id, arr) {
